@@ -178,10 +178,171 @@ function nextNumberRound(){ const digits = Math.max(1, nLevel); const min = Math
 
 function submitNumber(){ const el = document.getElementById('numInput'); if(!el) return; const val = el.value.trim(); if(val === nCurrent){ nLevel++; const levelEl = document.getElementById('nlevel'); if(levelEl) levelEl.textContent = nLevel; setTimeout(showNumberLevelScreen, 300); return; } nLives--; const livesEl = document.getElementById('nlives'); if(livesEl) livesEl.textContent = '❤'.repeat(nLives); if(nLives <= 0){ if(nLevel - 1 > nBest){ nBest = nLevel - 1; localStorage.setItem('numberHigh', nBest); } showGameOver('游戏结束 — 数字记忆', nLevel - 1, loadNumber); return; } setTimeout(showNumberLevelScreen, 300); }
 
+// ------------------ CHIMP TEST ------------------
+let cLevel = 1, cBest = parseInt(localStorage.getItem('chimpHigh')||'0'), cSize = 4, cNumbers = [], cNextClick = 1, cLives = 3, cAccept = false;
+
+function loadChimp(){
+  clearArea();
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `
+    <h2>黑猩猩测试</h2>
+    <div class='grid-wrapper' id='cWrapper'>
+      <div id='cStart' class='start-overlay'>开始</div>
+      <div id='chimpGrid' class='hidden'></div>
+    </div>
+    <p id='cStats' class='hidden'>生命：<span id='clives'></span> | 关卡：<span id='clevel'></span> | 最佳：<span id='cbest'>${cBest}</span></p>
+    <p id='cInstructions' class='instructions'>记住数字的位置，然后按从1到最大数字的顺序点击它们。</p>
+  `;
+  const start = document.getElementById('cStart'); if(start) start.addEventListener('click', startChimp);
+}
+
+function startChimp(){
+  cLevel = 1; cSize = 4; cLives = 3; cNextClick = 1;
+  const stats = document.getElementById('cStats'); if(stats) stats.classList.remove('hidden');
+  const livesEl = document.getElementById('clives'); if(livesEl) livesEl.textContent = '❤'.repeat(cLives);
+  const levelEl = document.getElementById('clevel'); if(levelEl) levelEl.textContent = cLevel;
+  const startEl = document.getElementById('cStart'); if(startEl) startEl.remove();
+  const gridEl = document.getElementById('chimpGrid'); if(gridEl) gridEl.classList.remove('hidden');
+  showChimpLevelScreen();
+}
+
+function showChimpLevelScreen(){
+  const wrapper = document.getElementById('cWrapper'); if(!wrapper) return;
+  const card = document.createElement('div'); card.className = 'level-overlay'; card.textContent = '第 ' + cLevel + ' 关';
+  wrapper.appendChild(card);
+  setTimeout(()=>{ card.remove(); startChimpLevel(); }, 900);
+}
+
+function startChimpLevel(){
+  cNextClick = 1; cAccept = false;
+  const count = cLevel + 3; // Start with 4 numbers, increase by 1 each level
+  cNumbers = [];
+  const positions = [];
+  const total = cSize * cSize;
+  
+  // Generate random positions
+  while(positions.length < count){
+    const pos = Math.floor(Math.random() * total);
+    if(!positions.includes(pos)) positions.push(pos);
+  }
+  
+  // Assign numbers to positions
+  for(let i = 0; i < count; i++){
+    cNumbers[positions[i]] = i + 1;
+  }
+  
+  buildChimpGrid();
+  showChimpNumbers();
+}
+
+function buildChimpGrid(){
+  const container = document.getElementById('chimpGrid');
+  if(!container) return;
+  container.className = 'grid';
+  container.style.gridTemplateColumns = `repeat(${cSize},1fr)`;
+  container.innerHTML = '';
+  for(let i = 0; i < cSize * cSize; i++){
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.index = i;
+    cell.dataset.number = cNumbers[i] || '';
+    if(cNumbers[i]){
+      cell.textContent = cNumbers[i];
+      cell.style.fontSize = '24px';
+      cell.style.fontWeight = '700';
+    }
+    cell.addEventListener('click', ()=> onChimpClick(i, cell));
+    container.appendChild(cell);
+  }
+}
+
+function showChimpNumbers(){
+  const cells = document.querySelectorAll('#chimpGrid .cell');
+  cells.forEach(cell => {
+    if(cell.dataset.number){
+      cell.style.background = '#4caf50';
+      cell.style.color = 'white';
+    }
+  });
+  
+  // Allow clicking immediately, numbers stay visible until number 1 is clicked
+  cAccept = true;
+}
+
+function hideChimpNumbers(){
+  const cells = document.querySelectorAll('#chimpGrid .cell');
+  cells.forEach(cell => {
+    if(cell.dataset.number){
+      cell.style.background = '';
+      cell.style.color = '';
+      cell.textContent = '';
+    }
+  });
+}
+
+function onChimpClick(i, cell){
+  if(!cAccept) return;
+  const expectedNum = cNumbers[i];
+  
+  if(!expectedNum || expectedNum !== cNextClick){
+    // Wrong click
+    cell.style.background = 'red';
+    cLives--;
+    const livesEl = document.getElementById('clives'); if(livesEl) livesEl.textContent = '❤'.repeat(cLives);
+    cAccept = false;
+    if(cLives <= 0){
+      if(cLevel - 1 > cBest){
+        cBest = cLevel - 1;
+        localStorage.setItem('chimpHigh', cBest);
+      }
+      showGameOver('游戏结束 — 黑猩猩测试', cLevel - 1, loadChimp);
+      return;
+    }
+    // Retry same level
+    setTimeout(()=>{
+      const cells = document.querySelectorAll('#chimpGrid .cell');
+      cells.forEach(c => c.style.background = '');
+      startChimpLevel();
+    }, 700);
+    return;
+  }
+  
+  // Correct click - hide numbers when clicking number 1
+  if(cNextClick === 1){
+    hideChimpNumbers();
+  }
+  
+  cell.style.background = '#4caf50';
+  cell.style.color = 'white';
+  cell.textContent = expectedNum;
+  cNextClick++;
+  
+  // Check if level complete
+  if(cNextClick > cLevel + 3){
+    cLevel++;
+    const levelEl = document.getElementById('clevel'); if(levelEl) levelEl.textContent = cLevel;
+    // Increase grid size every 3 levels
+    if(cLevel > 1 && (cLevel - 1) % 3 === 0){
+      cSize++;
+    }
+    cAccept = false;
+    setTimeout(()=>{
+      const cells = document.querySelectorAll('#chimpGrid .cell');
+      cells.forEach(c => {
+        c.style.background = '';
+        c.style.color = '';
+        c.textContent = '';
+      });
+      showChimpLevelScreen();
+    }, 700);
+  }
+}
+
 // attach menu buttons
 document.getElementById('btnSimon').addEventListener('click', loadSimon);
 document.getElementById('btnVisual').addEventListener('click', loadVisual);
 document.getElementById('btnNumber').addEventListener('click', loadNumber);
+document.getElementById('btnChimp').addEventListener('click', loadChimp);
 
 // initial menu
 loadMenu();
