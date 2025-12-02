@@ -1,13 +1,13 @@
 // --- helpers ---
 function clearArea(){ document.getElementById('gameArea').innerHTML=''; }
-function loadMenu(){ clearArea(); const a=document.getElementById('gameArea'); a.innerHTML=`<h2>Select a game</h2><p class='small'>Choose a game above.</p>`; }
+function loadMenu(){ clearArea(); const a=document.getElementById('gameArea'); a.innerHTML=`<h2>选择一个游戏</h2><p class='small'>在上方选择一个游戏。</p>`; }
 
 function showGameOver(msg, score, retryToStart){
   const area=document.getElementById('gameArea');
   const existing = area.querySelector('.game-over-card'); if(existing) existing.remove();
   const card = document.createElement('div');
   card.className='game-over-card';
-  card.innerHTML = `<div>${msg}</div><div style='margin-top:8px'>Final Score: ${score}</div><div style='margin-top:12px'><button id='retryBtn'>Retry</button><button id='menuBtn'>Return to Menu</button></div>`;
+  card.innerHTML = `<div>${msg}</div><div style='margin-top:8px'>最终得分：${score}</div><div style='margin-top:12px'><button id='retryBtn'>重试</button><button id='menuBtn'>返回菜单</button></div>`;
   area.appendChild(card);
   const retryBtn = document.getElementById('retryBtn');
   const menuBtn = document.getElementById('menuBtn');
@@ -25,13 +25,13 @@ function loadSimon(){
   clearArea();
   const area = document.getElementById('gameArea');
   area.innerHTML = `
-    <h2>Simon Says</h2>
+    <h2>西蒙说</h2>
     <div class='grid-wrapper' id='simonWrapper'>
-      <div id='simonStart' class='start-overlay'>START</div>
+      <div id='simonStart' class='start-overlay'>开始</div>
       <div id='simonGrid' class='hidden'></div>
     </div>
-    <p id='simonStats' class='hidden'>Lives: <span id='simonLives'></span> | Score: <span id='simonScore'></span> | Best: <span id='simonHigh'>${simonHigh}</span></p>
-    <p id='simonInstructions' class='instructions'>Watch the sequence of flashing cells and repeat it in the same order.</p>
+    <p id='simonStats' class='hidden'>生命：<span id='simonLives'></span> | 得分：<span id='simonScore'></span> | 最佳：<span id='simonHigh'>${simonHigh}</span></p>
+    <p id='simonInstructions' class='instructions'>观察闪烁的单元格序列，然后按相同顺序重复。</p>
   `;
   const start = document.getElementById('simonStart'); if(start) start.addEventListener('click', startSimon);
 }
@@ -55,7 +55,7 @@ function onSimonClick(i, cell){ if(!simonAccept) return; simonPlay.push(i); cons
     // wrong
     cell.style.background = 'red'; simonLives--; const livesEl = document.getElementById('simonLives'); if(livesEl) livesEl.textContent = '❤'.repeat(simonLives);
     simonAccept = false;
-    if(simonLives <= 0){ if(simonScore > simonHigh) localStorage.setItem('simonHigh', simonScore); showGameOver('Game Over — Simon', simonScore, loadSimon); return; }
+    if(simonLives <= 0){ if(simonScore > simonHigh) localStorage.setItem('simonHigh', simonScore); showGameOver('游戏结束 — 西蒙说', simonScore, loadSimon); return; }
     // replay same pattern for retry
     setTimeout(()=>{ resetGridColors('simonGrid'); simonPlay = []; playSimon(); }, 700);
     return;
@@ -72,13 +72,13 @@ function loadVisual(){
   clearArea();
   const area = document.getElementById('gameArea');
   area.innerHTML = `
-    <h2>Visual Memory</h2>
+    <h2>视觉记忆</h2>
     <div class='grid-wrapper' id='vWrapper'>
-      <div id='vStart' class='start-overlay'>START</div>
+      <div id='vStart' class='start-overlay'>开始</div>
       <div id='visualGrid' class='hidden'></div>
     </div>
-    <p id='vStats' class='hidden'>Lives: <span id='vlives'></span> | Level: <span id='vlevel'></span> | Best: <span id='vbest'>${vBest}</span></p>
-    <p id='vInstructions' class='instructions'>Remember which cells were highlighted, then click all of them. The grid gets larger every 2 levels.</p>
+    <p id='vStats' class='hidden'>生命：<span id='vlives'></span> | 关卡：<span id='vlevel'></span> | 最佳：<span id='vbest'>${vBest}</span></p>
+    <p id='vInstructions' class='instructions'>记住哪些单元格被高亮显示，然后点击所有它们。每2关网格会变大。</p>
   `;
   const start = document.getElementById('vStart'); if(start) start.addEventListener('click', startVisual);
 }
@@ -95,7 +95,7 @@ function startVisual(){
 
 function showVisualLevelScreen(){
   const wrapper = document.getElementById('vWrapper'); if(!wrapper) return;
-  const card = document.createElement('div'); card.className = 'level-overlay'; card.textContent = 'Level ' + vLevel;
+  const card = document.createElement('div'); card.className = 'level-overlay'; card.textContent = '第 ' + vLevel + ' 关';
   wrapper.appendChild(card);
   setTimeout(()=>{ card.remove(); startVisualLevel(); }, 900);
 }
@@ -112,7 +112,7 @@ function startVisualLevel(){
 
 function showVPattern(){ const cells = document.querySelectorAll('#visualGrid .cell'); vPattern.forEach(i=>{ if(cells[i]) cells[i].classList.add('flash'); }); setTimeout(()=>{ vPattern.forEach(i=>{ if(cells[i]) cells[i].classList.remove('flash'); }); vAccept = true; }, 900); }
 
-function endVisual(){ if(vLevel - 1 > vBest){ vBest = vLevel - 1; localStorage.setItem('visualHigh', vBest); } showGameOver('Game Over — Visual', vLevel - 1, loadVisual); }
+function endVisual(){ if(vLevel - 1 > vBest){ vBest = vLevel - 1; localStorage.setItem('visualHigh', vBest); } showGameOver('游戏结束 — 视觉记忆', vLevel - 1, loadVisual); }
 
 function onVisualClick(i, cell){
   if(!vAccept) return;
@@ -152,13 +152,13 @@ function loadNumber(){
   clearArea();
   const area = document.getElementById('gameArea');
   area.innerHTML = `
-    <h2>Number Memory</h2>
+    <h2>数字记忆</h2>
     <div class='grid-wrapper' id='nWrapper'>
-      <div id='nStart' class='start-overlay'>START</div>
+      <div id='nStart' class='start-overlay'>开始</div>
       <div id='nArea' class='grid'></div>
     </div>
-    <p id='nStats' class='hidden'>Lives: <span id='nlives'></span> | Level: <span id='nlevel'></span> | Best: <span id='nbest'>${nBest}</span></p>
-    <p id='nInstructions' class='instructions'>Remember the number shown, then enter it when prompted. The numbers get longer each level.</p>
+    <p id='nStats' class='hidden'>生命：<span id='nlives'></span> | 关卡：<span id='nlevel'></span> | 最佳：<span id='nbest'>${nBest}</span></p>
+    <p id='nInstructions' class='instructions'>记住显示的数字，然后在提示时输入。每关数字会变长。</p>
   `;
   const start = document.getElementById('nStart'); if(start) start.addEventListener('click', startNumber);
 }
@@ -172,11 +172,11 @@ function startNumber(){
   showNumberLevelScreen();
 }
 
-function showNumberLevelScreen(){ const wrapper = document.getElementById('nWrapper'); if(!wrapper) return; const card = document.createElement('div'); card.className='level-overlay'; card.textContent = 'Level ' + nLevel; wrapper.appendChild(card); setTimeout(()=>{ card.remove(); nextNumberRound(); }, 900); }
+function showNumberLevelScreen(){ const wrapper = document.getElementById('nWrapper'); if(!wrapper) return; const card = document.createElement('div'); card.className='level-overlay'; card.textContent = '第 ' + nLevel + ' 关'; wrapper.appendChild(card); setTimeout(()=>{ card.remove(); nextNumberRound(); }, 900); }
 
-function nextNumberRound(){ const digits = Math.max(1, nLevel); const min = Math.pow(10, digits - 1); const max = Math.pow(10, digits) - 1; nCurrent = String(Math.floor(Math.random() * (max - min + 1) + min)); const area = document.getElementById('nArea'); if(!area) return; area.innerHTML = `<div style='font-size:28px;font-weight:700;margin:10px 0'>${nCurrent}</div>`; setTimeout(()=>{ area.innerHTML = `<input id='numInput' type='text' placeholder='Enter number' /><div style='margin-top:8px'><button id='submitNumBtn'>Submit</button></div>`; const input = document.getElementById('numInput'); if(input) input.focus(); const btn = document.getElementById('submitNumBtn'); if(btn) btn.addEventListener('click', submitNumber); }, 1200); }
+function nextNumberRound(){ const digits = Math.max(1, nLevel); const min = Math.pow(10, digits - 1); const max = Math.pow(10, digits) - 1; nCurrent = String(Math.floor(Math.random() * (max - min + 1) + min)); const area = document.getElementById('nArea'); if(!area) return; area.innerHTML = `<div style='font-size:28px;font-weight:700;margin:10px 0'>${nCurrent}</div>`; setTimeout(()=>{ area.innerHTML = `<input id='numInput' type='text' placeholder='输入数字' /><div style='margin-top:8px'><button id='submitNumBtn'>提交</button></div>`; const input = document.getElementById('numInput'); if(input) input.focus(); const btn = document.getElementById('submitNumBtn'); if(btn) btn.addEventListener('click', submitNumber); }, 1200); }
 
-function submitNumber(){ const el = document.getElementById('numInput'); if(!el) return; const val = el.value.trim(); if(val === nCurrent){ nLevel++; const levelEl = document.getElementById('nlevel'); if(levelEl) levelEl.textContent = nLevel; setTimeout(showNumberLevelScreen, 300); return; } nLives--; const livesEl = document.getElementById('nlives'); if(livesEl) livesEl.textContent = '❤'.repeat(nLives); if(nLives <= 0){ if(nLevel - 1 > nBest){ nBest = nLevel - 1; localStorage.setItem('numberHigh', nBest); } showGameOver('Game Over — Number Memory', nLevel - 1, loadNumber); return; } setTimeout(showNumberLevelScreen, 300); }
+function submitNumber(){ const el = document.getElementById('numInput'); if(!el) return; const val = el.value.trim(); if(val === nCurrent){ nLevel++; const levelEl = document.getElementById('nlevel'); if(levelEl) levelEl.textContent = nLevel; setTimeout(showNumberLevelScreen, 300); return; } nLives--; const livesEl = document.getElementById('nlives'); if(livesEl) livesEl.textContent = '❤'.repeat(nLives); if(nLives <= 0){ if(nLevel - 1 > nBest){ nBest = nLevel - 1; localStorage.setItem('numberHigh', nBest); } showGameOver('游戏结束 — 数字记忆', nLevel - 1, loadNumber); return; } setTimeout(showNumberLevelScreen, 300); }
 
 // attach menu buttons
 document.getElementById('btnSimon').addEventListener('click', loadSimon);
