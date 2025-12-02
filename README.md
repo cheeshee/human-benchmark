@@ -1,1 +1,1 @@
-# human-benchmark.github.io
+# human-benchmark
