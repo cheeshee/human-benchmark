@@ -322,7 +322,7 @@ function showVPattern() {
       }
     });
     vAccept = true;
-  }, 900);
+  }, 900 + (vLevel - 1) * 200);
 }
 
 function endVisual() {
@@ -469,7 +469,7 @@ function nextNumberRound() {
     if (btn) {
       btn.addEventListener('click', submitNumber);
     }
-  }, 2500);
+  }, 2500 + (nLevel - 1) * 500);
 }
 
 function submitNumber() {
