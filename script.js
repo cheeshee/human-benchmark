@@ -180,12 +180,78 @@ function submitNumber(){ const el = document.getElementById('numInput'); if(!el)
 
 // ------------------ CHIMP TEST ------------------
 let cLevel = 1, cBest = parseInt(localStorage.getItem('chimpHigh')||'0'), cSize = 4, cNumbers = [], cNextClick = 1, cLives = 3, cAccept = false;
+let chimpMuted = localStorage.getItem('chimpMuted') === 'true';
+
+// Sound effects for chimp test
+function playCorrectSound(){
+  if(chimpMuted) return;
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800; // Higher pitch for correct
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch(e) {
+    // Fallback if audio context fails
+    console.log('Audio not available');
+  }
+}
+
+function playWrongSound(){
+  if(chimpMuted) return;
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 150; // Lower pitch for wrong
+    oscillator.type = 'sawtooth'; // Harsher sound
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
+  } catch(e) {
+    // Fallback if audio context fails
+    console.log('Audio not available');
+  }
+}
+
+function toggleChimpMute(){
+  chimpMuted = !chimpMuted;
+  localStorage.setItem('chimpMuted', chimpMuted);
+  updateMuteButton();
+}
+
+function updateMuteButton(){
+  const muteBtn = document.getElementById('chimpMuteBtn');
+  if(muteBtn){
+    muteBtn.textContent = chimpMuted ? '🔇 静音' : '🔊 声音';
+  }
+}
 
 function loadChimp(){
   clearArea();
   const area = document.getElementById('gameArea');
   area.innerHTML = `
     <h2>黑猩猩测试</h2>
+    <div style='margin-bottom:10px'>
+      <button id='chimpMuteBtn' style='padding:6px 12px; font-size:16px; border-radius:6px; border:0; background:#666; color:white; cursor:pointer;'>${chimpMuted ? '🔇 静音' : '🔊 声音'}</button>
+    </div>
     <div class='grid-wrapper' id='cWrapper'>
       <div id='cStart' class='start-overlay'>开始</div>
       <div id='chimpGrid' class='hidden'></div>
@@ -194,6 +260,7 @@ function loadChimp(){
     <p id='cInstructions' class='instructions'>记住数字的位置，然后按从1到最大数字的顺序点击它们。</p>
   `;
   const start = document.getElementById('cStart'); if(start) start.addEventListener('click', startChimp);
+  const muteBtn = document.getElementById('chimpMuteBtn'); if(muteBtn) muteBtn.addEventListener('click', toggleChimpMute);
 }
 
 function startChimp(){
@@ -238,33 +305,58 @@ function startChimpLevel(){
 function buildChimpGrid(){
   const container = document.getElementById('chimpGrid');
   if(!container) return;
-  container.className = 'grid';
-  container.style.gridTemplateColumns = `repeat(${cSize},1fr)`;
+  const wrapper = document.getElementById('cWrapper');
+  if(!wrapper) return;
+  
+  container.style.position = 'relative';
+  container.style.width = '100%';
+  container.style.height = '100%';
+  container.style.background = 'transparent';
   container.innerHTML = '';
+  
+  // Calculate cell size accounting for gaps
+  const gap = 8;
+  const wrapperSize = 380; // grid-wrapper width
+  const totalGapWidth = (cSize - 1) * gap;
+  const totalGapHeight = (cSize - 1) * gap;
+  const cellSize = (wrapperSize - totalGapWidth) / cSize;
+  
+  // Calculate offset to center the grid
+  const totalWidth = cSize * cellSize + totalGapWidth;
+  const totalHeight = cSize * cellSize + totalGapHeight;
+  const offsetX = (wrapperSize - totalWidth) / 2;
+  const offsetY = (wrapperSize - totalHeight) / 2;
+  
+  // Only create cells for positions that have numbers
   for(let i = 0; i < cSize * cSize; i++){
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.dataset.index = i;
-    cell.dataset.number = cNumbers[i] || '';
     if(cNumbers[i]){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.index = i;
+      cell.dataset.number = cNumbers[i];
       cell.textContent = cNumbers[i];
       cell.style.fontSize = '24px';
       cell.style.fontWeight = '700';
+      cell.style.background = '#4caf50';
+      cell.style.color = 'white';
+      cell.style.position = 'absolute';
+      cell.style.display = 'flex';
+      // Calculate position based on grid position with centering offset
+      const row = Math.floor(i / cSize);
+      const col = i % cSize;
+      cell.style.left = (offsetX + col * (cellSize + gap)) + 'px';
+      cell.style.top = (offsetY + row * (cellSize + gap)) + 'px';
+      cell.style.width = cellSize + 'px';
+      cell.style.height = cellSize + 'px';
+      cell.style.borderRadius = '6px';
+      cell.addEventListener('click', ()=> onChimpClick(i, cell));
+      container.appendChild(cell);
     }
-    cell.addEventListener('click', ()=> onChimpClick(i, cell));
-    container.appendChild(cell);
   }
 }
 
 function showChimpNumbers(){
-  const cells = document.querySelectorAll('#chimpGrid .cell');
-  cells.forEach(cell => {
-    if(cell.dataset.number){
-      cell.style.background = '#4caf50';
-      cell.style.color = 'white';
-    }
-  });
-  
+  // Numbers are already visible with green background from buildChimpGrid
   // Allow clicking immediately, numbers stay visible until number 1 is clicked
   cAccept = true;
 }
@@ -273,9 +365,9 @@ function hideChimpNumbers(){
   const cells = document.querySelectorAll('#chimpGrid .cell');
   cells.forEach(cell => {
     if(cell.dataset.number){
-      cell.style.background = '';
-      cell.style.color = '';
+      // Change to solid color (remove number text, keep background)
       cell.textContent = '';
+      cell.style.background = '#4caf50';
     }
   });
 }
@@ -286,6 +378,7 @@ function onChimpClick(i, cell){
   
   if(!expectedNum || expectedNum !== cNextClick){
     // Wrong click
+    playWrongSound();
     cell.style.background = 'red';
     cLives--;
     const livesEl = document.getElementById('clives'); if(livesEl) livesEl.textContent = '❤'.repeat(cLives);
@@ -300,21 +393,22 @@ function onChimpClick(i, cell){
     }
     // Retry same level
     setTimeout(()=>{
-      const cells = document.querySelectorAll('#chimpGrid .cell');
-      cells.forEach(c => c.style.background = '');
       startChimpLevel();
     }, 700);
     return;
   }
   
-  // Correct click - hide numbers when clicking number 1
+  // Correct click
+  playCorrectSound();
+  
+  // Hide numbers when clicking number 1
   if(cNextClick === 1){
     hideChimpNumbers();
   }
   
-  cell.style.background = '#4caf50';
-  cell.style.color = 'white';
-  cell.textContent = expectedNum;
+  // Make clicked square disappear
+  cell.style.opacity = '0';
+  cell.style.pointerEvents = 'none';
   cNextClick++;
   
   // Check if level complete
@@ -327,12 +421,6 @@ function onChimpClick(i, cell){
     }
     cAccept = false;
     setTimeout(()=>{
-      const cells = document.querySelectorAll('#chimpGrid .cell');
-      cells.forEach(c => {
-        c.style.background = '';
-        c.style.color = '';
-        c.textContent = '';
-      });
       showChimpLevelScreen();
     }, 700);
   }
